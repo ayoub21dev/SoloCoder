@@ -10,14 +10,18 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  allProjects,
-  getCategoryProgress,
   type Category,
   type Project
 } from "@/lib/projects-data"
 import { motion, AnimatePresence } from "framer-motion"
 import { lessons } from "@/lib/curriculum"
 import { useProgress } from "@/hooks/useProgress"
+
+const rtlTextStyle = {
+  direction: "rtl" as const,
+  textAlign: "right" as const,
+  unicodeBidi: "plaintext" as const,
+}
 
 /* ─── data ─────────────────────────────────────── */
 const categories = [
@@ -143,11 +147,11 @@ function ProjectCard({ project, onClick }: { project: Project, onClick: () => vo
 
       {/* ── Section 2: Content (Center) ── */}
       <div className="flex-1 flex flex-col justify-center px-6 py-5 text-right relative">
-        <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-3 mb-1" dir="rtl" style={rtlTextStyle}>
           <h3 className={cn(
             "font-black text-xl tracking-tight leading-none",
             isLocked ? "text-zinc-600" : "text-white"
-          )}>
+          )} dir="rtl" style={rtlTextStyle}>
             {project.title}
           </h3>
           {isInProgress && (
@@ -159,7 +163,7 @@ function ProjectCard({ project, onClick }: { project: Project, onClick: () => vo
         <p className={cn(
           "text-sm font-medium leading-normal max-w-[90%]",
           isLocked ? "text-zinc-700" : "text-zinc-500"
-        )}>
+        )} dir="rtl" style={rtlTextStyle}>
           {project.description}
         </p>
 
@@ -177,15 +181,15 @@ function ProjectCard({ project, onClick }: { project: Project, onClick: () => vo
       </div>
 
       {/* ── Section 3: Stats (Left Middle) ── */}
-      <div className="flex flex-col items-start justify-center px-6 py-5 min-w-[120px] border-r border-white/5">
+      <div className="flex flex-col items-start justify-center px-6 py-5 min-w-[120px] border-r border-white/5" dir="rtl" style={rtlTextStyle}>
         <div className={cn(
           "flex items-center gap-1.5 text-[15px] font-black",
           isLocked ? "text-zinc-700" : "text-[#f59e0b]"
-        )}>
+        )} dir="rtl" style={rtlTextStyle}>
           <span>XP {project.xpReward}</span>
           <Zap className="h-4 w-4 fill-current" />
         </div>
-        <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 mt-1">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 mt-1" dir="rtl" style={rtlTextStyle}>
           <Clock className="h-3.5 w-3.5" />
           <span>{project.estimatedTime}</span>
         </div>
@@ -223,8 +227,8 @@ export default function LearningPath({ onProjectSelect }: LearningPathProps) {
     <div className="pb-24 pt-10" dir="rtl">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-black text-white tracking-tight mb-3">مسار التعلم</h1>
-        <p className="text-zinc-500 text-lg">اختر المسار وابدأ رحلتك في البرمجة</p>
+        <h1 className="text-5xl font-black text-white tracking-tight mb-3" dir="rtl" style={rtlTextStyle}>مسار التعلم</h1>
+        <p className="text-zinc-500 text-lg" dir="rtl" style={rtlTextStyle}>اختر المسار وابدأ رحلتك في البرمجة</p>
       </div>
 
       {/* Roadmap circles */}

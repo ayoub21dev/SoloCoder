@@ -268,5 +268,87 @@ export const lessons: Record<string, Step[]> = {
         expectedOutput: "<!-- قريبًا -->",
         testCases: [ { id: "tc-5", description: "نجاح 자동", testLogic: "return true;" } ]
      }
+  ],
+  "css-1": [
+    {
+      id: "css-1-step-1",
+      stepNumber: 1,
+      title: "الخطوة الأولى: إضافة وسم style",
+      description: "في هذا المشروع سنضيف الحياة إلى صفحة HTML باستخدام CSS. سنبدأ بإضافة وسم `<style>` داخل الملف حتى نكتب قواعد التنسيق الخاصة بنا.",
+      instructions: "أضف وسم `<style>` أعلى الصفحة، ثم اترك القواعد بداخله فارغة في هذه الخطوة.",
+      seedCode: "<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      expectedOutput: "<style>\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      testCases: [
+        {
+          id: "css-1-tc-1",
+          description: "يجب أن يحتوي الكود على وسم `<style>` صالح.",
+          testLogic: "return /<style[\\s\\S]*?>[\\s\\S]*?<\\/style>/i.test(code);"
+        }
+      ]
+    },
+    {
+      id: "css-1-step-2",
+      stepNumber: 2,
+      title: "الخطوة الثانية: تلوين العنوان",
+      description: "الآن سنجعل العنوان أكثر وضوحاً باستخدام خاصية `color`. نكتب القاعدة بالشكل `h1 { color: ...; }` داخل وسم `<style>`.",
+      instructions: "أضف قاعدة CSS تجعل لون `h1` هو `royalblue`.",
+      seedCode: "<style>\n\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      expectedOutput: "<style>\nh1 {\n  color: royalblue;\n}\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      testCases: [
+        {
+          id: "css-1-tc-2",
+          description: "يجب إضافة قاعدة CSS للعنصر `h1` تتضمن `color: royalblue`.",
+          testLogic: "return /h1\\s*\\{[\\s\\S]*?color\\s*:\\s*royalblue\\s*;?[\\s\\S]*?\\}/i.test(code);"
+        }
+      ]
+    },
+    {
+      id: "css-1-step-3",
+      stepNumber: 3,
+      title: "الخطوة الثالثة: تغيير حجم الفقرة",
+      description: "يمكننا التحكم في حجم النص باستخدام الخاصية `font-size`. سنستهدف الفقرة `p` لجعلها أوضح في المعاينة.",
+      instructions: "أضف قاعدة CSS تجعل حجم خط الفقرة `20px`.",
+      seedCode: "<style>\nh1 {\n  color: royalblue;\n}\n\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      expectedOutput: "<style>\nh1 {\n  color: royalblue;\n}\n\np {\n  font-size: 20px;\n}\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      testCases: [
+        {
+          id: "css-1-tc-3",
+          description: "يجب أن تحتوي الفقرة `p` على `font-size: 20px`.",
+          testLogic: "return /p\\s*\\{[\\s\\S]*?font-size\\s*:\\s*20px\\s*;?[\\s\\S]*?\\}/i.test(code);"
+        }
+      ]
+    },
+    {
+      id: "css-1-step-4",
+      stepNumber: 4,
+      title: "الخطوة الرابعة: محاذاة المحتوى",
+      description: "سنستخدم خاصية `text-align` لمحاذاة النص إلى المنتصف، وهذا يعطينا مظهراً أنظف وأوضح للواجهة.",
+      instructions: "أضف قاعدة لعنصر `body` تجعل `text-align` يساوي `center`.",
+      seedCode: "<style>\nh1 {\n  color: royalblue;\n}\n\np {\n  font-size: 20px;\n}\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      expectedOutput: "<style>\nbody {\n  text-align: center;\n}\n\nh1 {\n  color: royalblue;\n}\n\np {\n  font-size: 20px;\n}\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      testCases: [
+        {
+          id: "css-1-tc-4",
+          description: "يجب أن يحتوي `body` على `text-align: center`.",
+          testLogic: "return /body\\s*\\{[\\s\\S]*?text-align\\s*:\\s*center\\s*;?[\\s\\S]*?\\}/i.test(code);"
+        }
+      ]
+    },
+    {
+      id: "css-1-step-5",
+      stepNumber: 5,
+      title: "الخطوة الخامسة: إضافة خلفية ناعمة",
+      description: "اللمسة الأخيرة ستكون إضافة لون خلفية خفيف للصفحة لتبدو أكثر أناقة عند المعاينة.",
+      instructions: "أضف داخل قاعدة `body` الخاصية `background-color` بالقيمة `#f3f4f6`.",
+      seedCode: "<style>\nbody {\n  text-align: center;\n}\n\nh1 {\n  color: royalblue;\n}\n\np {\n  font-size: 20px;\n}\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      expectedOutput: "<style>\nbody {\n  text-align: center;\n  background-color: #f3f4f6;\n}\n\nh1 {\n  color: royalblue;\n}\n\np {\n  font-size: 20px;\n}\n</style>\n<h1>Welcome to SoloCoder</h1>\n<p>ابدأ رحلتك في تعلم CSS</p>",
+      testCases: [
+        {
+          id: "css-1-tc-5",
+          description: "يجب أن تحتوي قاعدة `body` على `background-color: #f3f4f6`.",
+          testLogic: "return /body\\s*\\{[\\s\\S]*?background-color\\s*:\\s*#f3f4f6\\s*;?[\\s\\S]*?\\}/i.test(code);"
+        }
+      ]
+    }
   ]
 };

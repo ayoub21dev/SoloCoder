@@ -103,6 +103,7 @@ const LearnerDashboard = ({ activeView, setActiveView }: LearnerDashboardProps) 
               className="h-full w-full relative pb-4"
             >
               <WorkspaceEditor 
+                key={selectedProjectId ?? 'workspace-empty'}
                 projectId={selectedProjectId} 
                 onBack={() => setActiveView('roadmap')} 
               />

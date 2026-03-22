@@ -12,6 +12,7 @@ import DirectorDashboard from '@/components/dashboards/DirectorDashboard';
 export default function HomeClient() {
   const [activeDashboard, setActiveDashboard] = useState<DashboardType>('learner');
   const [activeView, setActiveView] = useState('roadmap');
+  const isWorkspaceView = activeDashboard === 'learner' && activeView === 'workspace';
 
   const renderDashboard = () => {
     switch (activeDashboard) {
@@ -29,10 +30,10 @@ export default function HomeClient() {
   };
 
   return (
-    <main className="min-h-screen bg-black flex flex-col pt-20">
-      <TopBar activeView={activeView} setActiveView={setActiveView} />
+    <main className={isWorkspaceView ? "h-screen bg-black flex flex-col overflow-hidden" : "min-h-screen bg-black flex flex-col pt-20"}>
+      {!isWorkspaceView && <TopBar activeView={activeView} setActiveView={setActiveView} />}
 
-      <div className="flex-1 p-8 overflow-y-auto">
+      <div className={isWorkspaceView ? "flex-1 overflow-hidden" : "flex-1 p-8 overflow-y-auto"}>
         <AnimatePresence mode="wait">
           <motion.div
             key={activeDashboard}
@@ -40,7 +41,7 @@ export default function HomeClient() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="h-full"
+            className={isWorkspaceView ? "h-full w-full" : "h-full"}
           >
             {renderDashboard()}
           </motion.div>
@@ -49,4 +50,3 @@ export default function HomeClient() {
     </main>
   );
 }
-
