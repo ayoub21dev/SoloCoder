@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import LearningPath from './LearningPath';
 import Leaderboard from './Leaderboard';
 import WorkspaceEditor from '@/components/ui/WorkspaceEditor';
+import { useLocale } from '@/components/providers/LocaleProvider';
 
 interface LearnerDashboardProps {
   activeView: string;
@@ -26,6 +27,7 @@ interface LearnerDashboardProps {
 const LearnerDashboard = ({ activeView, setActiveView }: LearnerDashboardProps) => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const { direction, isArabic } = useLocale();
   
   const studentStats = {
     level: 12,
@@ -34,9 +36,20 @@ const LearnerDashboard = ({ activeView, setActiveView }: LearnerDashboardProps) 
     progress: 65,
     projectName: "بناء واجهة متجر إلكتروني"
   };
+  const uiText = isArabic
+    ? {
+        blockedTitle: 'حسابك موقوف مؤقتاً',
+        blockedMessage: 'بسبب الغياب المتكرر، تم تعليق وصولك إلى المحتوى التعليمي. يرجى مراجعة إدارة المدرسة لتسوية وضعك.',
+        contactAdmin: 'مراسلة الإدارة'
+      }
+    : {
+        blockedTitle: 'Your Account Is Temporarily Paused',
+        blockedMessage: 'Because of repeated absences, your access to the learning content has been suspended. Please contact the school administration to resolve your status.',
+        contactAdmin: 'Contact Administration'
+      };
 
   return (
-    <div className="relative h-full flex flex-col gap-6">
+    <div className="relative h-full flex flex-col gap-6" dir={direction}>
       {/* Blocked Overlay */}
       {isBlocked && (
         <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center rounded-2xl overflow-hidden border border-red-500/20">
@@ -48,12 +61,12 @@ const LearnerDashboard = ({ activeView, setActiveView }: LearnerDashboardProps) 
             <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <Lock className="w-10 h-10 text-red-500" />
             </div>
-            <h2 className="text-2xl font-bold mb-4">حسابك موقوف مؤقتاً</h2>
+            <h2 className="text-2xl font-bold mb-4">{uiText.blockedTitle}</h2>
             <p className="text-muted leading-relaxed mb-8">
-              بسبب الغياب المتكرر، تم تعليق وصولك إلى المحتوى التعليمي. يرجى مراجعة إدارة المدرسة لتسوية وضعك.
+              {uiText.blockedMessage}
             </p>
             <button className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition-colors">
-              مراسلة الإدارة
+              {uiText.contactAdmin}
             </button>
           </motion.div>
         </div>

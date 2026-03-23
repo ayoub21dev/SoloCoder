@@ -8,11 +8,21 @@ import LearnerDashboard from '@/components/dashboards/LearnerDashboard';
 import MentorDashboard from '@/components/dashboards/MentorDashboard';
 import GatekeeperDashboard from '@/components/dashboards/GatekeeperDashboard';
 import DirectorDashboard from '@/components/dashboards/DirectorDashboard';
+import { LocaleProvider, useLocale } from '@/components/providers/LocaleProvider';
 
 export default function HomeClient() {
+  return (
+    <LocaleProvider>
+      <HomeShell />
+    </LocaleProvider>
+  );
+}
+
+function HomeShell() {
   const [activeDashboard, setActiveDashboard] = useState<DashboardType>('learner');
   const [activeView, setActiveView] = useState('roadmap');
   const isWorkspaceView = activeDashboard === 'learner' && activeView === 'workspace';
+  const { direction } = useLocale();
 
   const renderDashboard = () => {
     switch (activeDashboard) {
@@ -30,7 +40,10 @@ export default function HomeClient() {
   };
 
   return (
-    <main className={isWorkspaceView ? "h-screen bg-black flex flex-col overflow-hidden" : "min-h-screen bg-black flex flex-col pt-20"}>
+    <main
+      dir={direction}
+      className={isWorkspaceView ? "h-screen bg-black flex flex-col overflow-hidden" : "min-h-screen bg-black flex flex-col pt-20"}
+    >
       {!isWorkspaceView && <TopBar activeView={activeView} setActiveView={setActiveView} />}
 
       <div className={isWorkspaceView ? "flex-1 overflow-hidden" : "flex-1 p-8 overflow-y-auto"}>

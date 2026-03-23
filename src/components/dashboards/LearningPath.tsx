@@ -14,8 +14,8 @@ import {
   type Project
 } from "@/lib/projects-data"
 import { motion, AnimatePresence } from "framer-motion"
-import { lessons } from "@/lib/curriculum"
 import { useProgress } from "@/hooks/useProgress"
+import { useLocale } from "@/components/providers/LocaleProvider"
 
 const rtlTextStyle = {
   direction: "rtl" as const,
@@ -112,14 +112,17 @@ function Connector() {
 
 /* ─── Project row card ──────────────────────────── */
 function ProjectCard({ project, onClick }: { project: Project, onClick: () => void }) {
+  const { direction, isArabic } = useLocale()
   const isLocked      = project.status === "locked"
   const isCompleted   = project.status === "completed"
   const isInProgress  = project.status === "in-progress"
   const pct = Math.round((project.completedSteps / project.totalSteps) * 100)
+  const projectTitle = isArabic ? project.titleAr ?? project.title : project.title
+  const projectDescription = isArabic ? project.descriptionAr ?? project.description : project.description
 
   return (
     <div
-      dir="rtl"
+      dir={direction}
       onClick={isLocked ? undefined : onClick}
       className={cn(
         "group relative flex items-stretch gap-0 rounded-2xl border bg-[#050505] transition-all duration-200 min-h-[100px]",
@@ -146,25 +149,25 @@ function ProjectCard({ project, onClick }: { project: Project, onClick: () => vo
       </div>
 
       {/* ── Section 2: Content (Center) ── */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-5 text-right relative">
-        <div className="flex items-center gap-3 mb-1" dir="rtl" style={rtlTextStyle}>
+      <div className={cn("relative flex-1 flex flex-col justify-center px-6 py-5", isArabic ? "text-right" : "text-left")}>
+        <div className="flex items-center gap-3 mb-1" dir={direction} style={isArabic ? rtlTextStyle : undefined}>
           <h3 className={cn(
             "font-black text-xl tracking-tight leading-none",
             isLocked ? "text-zinc-600" : "text-white"
-          )} dir="rtl" style={rtlTextStyle}>
-            {project.title}
+          )} dir={direction} style={isArabic ? rtlTextStyle : undefined}>
+            {projectTitle}
           </h3>
           {isInProgress && (
             <span className="bg-[#f59e0b]/10 text-[#f59e0b] text-[10px] font-black px-2 py-0.5 rounded border border-[#f59e0b]/20">
-              جاري
+              {isArabic ? "جاري" : "In Progress"}
             </span>
           )}
         </div>
         <p className={cn(
           "text-sm font-medium leading-normal max-w-[90%]",
           isLocked ? "text-zinc-700" : "text-zinc-500"
-        )} dir="rtl" style={rtlTextStyle}>
-          {project.description}
+        )} dir={direction} style={isArabic ? rtlTextStyle : undefined}>
+          {projectDescription}
         </p>
 
         {/* Progress bar at the bottom */}
@@ -181,15 +184,15 @@ function ProjectCard({ project, onClick }: { project: Project, onClick: () => vo
       </div>
 
       {/* ── Section 3: Stats (Left Middle) ── */}
-      <div className="flex flex-col items-start justify-center px-6 py-5 min-w-[120px] border-r border-white/5" dir="rtl" style={rtlTextStyle}>
+      <div className="flex flex-col items-start justify-center px-6 py-5 min-w-[120px] border-r border-white/5" dir={direction} style={isArabic ? rtlTextStyle : undefined}>
         <div className={cn(
           "flex items-center gap-1.5 text-[15px] font-black",
           isLocked ? "text-zinc-700" : "text-[#f59e0b]"
-        )} dir="rtl" style={rtlTextStyle}>
+        )} dir={direction} style={isArabic ? rtlTextStyle : undefined}>
           <span>XP {project.xpReward}</span>
           <Zap className="h-4 w-4 fill-current" />
         </div>
-        <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 mt-1" dir="rtl" style={rtlTextStyle}>
+        <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-500 mt-1" dir={direction} style={isArabic ? rtlTextStyle : undefined}>
           <Clock className="h-3.5 w-3.5" />
           <span>{project.estimatedTime}</span>
         </div>
@@ -209,6 +212,7 @@ interface LearningPathProps {
 }
 
 export default function LearningPath({ onProjectSelect }: LearningPathProps) {
+  const { direction, isArabic } = useLocale()
   const [selected, setSelected] = useState<Category>("html")
   const [previewProject, setPreviewProject] = useState<Project | null>(null)
   
@@ -222,13 +226,30 @@ export default function LearningPath({ onProjectSelect }: LearningPathProps) {
   const percentage = total > 0 ? (completed / total) * 100 : 0
   
   const prog = { total, completed, xpEarned, totalXp, percentage }
+  const uiText = isArabic
+    ? {
+        title: 'مسار التعلم',
+        subtitle: 'اختر المسار وابدأ رحلتك في البرمجة',
+        completed: 'مكتمل',
+        previewTitle: 'هذه معاينة لما ستقوم ببنائه',
+        previewEmpty: 'لا توجد معاينة جاهزة لهذا المشروع بعد.',
+        openProject: 'ابدأ كتابة الكود!'
+      }
+    : {
+        title: 'Learning Path',
+        subtitle: 'Choose a track and start your coding journey',
+        completed: 'completed',
+        previewTitle: 'Preview of what you will build',
+        previewEmpty: 'No preview is available for this project yet.',
+        openProject: 'Start Coding'
+      }
 
   return (
-    <div className="pb-24 pt-10" dir="rtl">
+    <div className="pb-24 pt-10" dir={direction}>
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-black text-white tracking-tight mb-3" dir="rtl" style={rtlTextStyle}>مسار التعلم</h1>
-        <p className="text-zinc-500 text-lg" dir="rtl" style={rtlTextStyle}>اختر المسار وابدأ رحلتك في البرمجة</p>
+        <h1 className="text-5xl font-black text-white tracking-tight mb-3" dir={direction} style={isArabic ? rtlTextStyle : undefined}>{uiText.title}</h1>
+        <p className="text-zinc-500 text-lg" dir={direction} style={isArabic ? rtlTextStyle : undefined}>{uiText.subtitle}</p>
       </div>
 
       {/* Roadmap circles */}
@@ -258,7 +279,7 @@ export default function LearningPath({ onProjectSelect }: LearningPathProps) {
            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
             <CheckCircle2 className="h-4 w-4 text-black stroke-[3]" />
           </div>
-          <span className="text-white font-black text-base">{prog.completed} / {prog.total} مكتمل</span>
+          <span className="text-white font-black text-base">{prog.completed} / {prog.total} {uiText.completed}</span>
         </div>
       </div>
 
@@ -287,22 +308,28 @@ export default function LearningPath({ onProjectSelect }: LearningPathProps) {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               className="w-full max-w-4xl bg-[#0a0a0a] border border-[#262626] rounded-2xl flex flex-col overflow-hidden shadow-2xl"
-              dir="rtl"
+              dir={direction}
             >
               <div className="bg-[#111111] px-6 py-4 flex items-center justify-between border-b border-[#262626]">
-                 <span className="text-zinc-300 font-bold">هذه معاينة لما ستقوم ببنائه</span>
+                 <span className="text-zinc-300 font-bold">{uiText.previewTitle}</span>
                  <button onClick={() => setPreviewProject(null)} className="text-zinc-500 hover:text-white transition-colors">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                  </button>
               </div>
 
               <div className="flex-1 bg-white relative min-h-[400px]" dir="ltr">
+                {previewProject.previewHtml ? (
                   <iframe
                     title="project-preview"
-                    srcDoc={lessons[previewProject.id]?.[lessons[previewProject.id].length - 1]?.expectedOutput || ""}
+                    srcDoc={previewProject.previewHtml}
                     sandbox="allow-scripts"
                     className="absolute inset-0 w-full h-full border-0"
                   />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-zinc-50 p-8 text-center text-zinc-500">
+                    {uiText.previewEmpty}
+                  </div>
+                )}
               </div>
 
               <div className="p-6 bg-[#0a0a0a] border-t border-[#262626]">
@@ -313,7 +340,7 @@ export default function LearningPath({ onProjectSelect }: LearningPathProps) {
                   }}
                   className="w-full py-4 border-2 border-[#262626] hover:bg-white hover:text-black hover:border-white text-white rounded-lg font-bold text-lg transition-all"
                 >
-                  ابدأ كتابة الكود!
+                  {uiText.openProject}
                 </button>
               </div>
             </motion.div>

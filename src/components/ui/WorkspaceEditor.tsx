@@ -2,10 +2,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { lessons } from '@/lib/curriculum';
+import { buildPreviewDocument, loadProjectSteps, Step } from '@/lib/curriculum';
 import { runTests, TestResult } from '@/lib/validation';
 import { CheckCircle, XCircle, Circle, Play, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useProgress } from '@/hooks/useProgress';
+import { getProjectById } from '@/lib/projects-data';
+import { useLocale } from '@/components/providers/LocaleProvider';
 import { cn } from '@/lib/utils';
 
 interface WorkspaceEditorProps {
@@ -21,6 +23,12 @@ type WorkspaceLayout = {
 
 type DragTarget = 'instructions' | 'editor' | 'preview-height';
 type DragAxis = 'col' | 'row';
+type InstructionLanguage = 'ar' | 'en';
+const rtlTextStyle = {
+  direction: 'rtl' as const,
+  textAlign: 'right' as const,
+  unicodeBidi: 'plaintext' as const,
+};
 
 type DragState = {
   target: DragTarget;
@@ -167,8 +175,6 @@ function renderTextBlocks(text: string, className: string) {
 }
 
 export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorProps) {
-  const initialStepList = projectId ? lessons[projectId] : null;
-  const initialCode = initialStepList?.[0]?.seedCode ?? '';
   const { markCompleted } = useProgress();
 
   const desktopRootRef = useRef<HTMLDivElement | null>(null);
@@ -187,17 +193,22 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
     typeof window === 'undefined' ? 900 : window.innerHeight
   ));
   const [layout, setLayout] = useState<WorkspaceLayout>(() => loadWorkspaceLayout());
+  const [stepList, setStepList] = useState<Step[] | null>(null);
+  const [isLoadingSteps, setIsLoadingSteps] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [code, setCode] = useState(initialCode);
+  const [code, setCode] = useState('');
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isPassed, setIsPassed] = useState(false);
+  const [isCheckingCode, setIsCheckingCode] = useState(false);
   const [dragAxis, setDragAxis] = useState<DragAxis | null>(null);
 
-  const stepList = projectId ? lessons[projectId] : null;
-  const currentStep = stepList ? stepList[currentStepIndex] : null;
   const hasProjectId = typeof projectId === 'string' && projectId.length > 0;
+  const currentStep = stepList ? stepList[currentStepIndex] : null;
   const isDesktop = viewportWidth >= DESKTOP_BREAKPOINT;
   const desktopLayout = clampDesktopLayout(layout, viewportWidth);
+  const currentProject = projectId ? getProjectById(projectId) : null;
+  const { locale, direction, isArabic } = useLocale();
+  const instructionLanguage: InstructionLanguage = locale;
 
   useEffect(() => {
     const handleResize = () => {
@@ -219,6 +230,49 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
       }
     };
   }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function hydrateProjectSteps() {
+      if (!projectId) {
+        setStepList(null);
+        setCode('');
+        setCurrentStepIndex(0);
+        setTestResults([]);
+        setIsPassed(false);
+        return;
+      }
+
+      setIsLoadingSteps(true);
+      setStepList(null);
+      setCode('');
+      setCurrentStepIndex(0);
+      setTestResults([]);
+      setIsPassed(false);
+
+      try {
+        const steps = await loadProjectSteps(projectId);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setStepList(steps);
+        setCode(steps?.[0]?.seedCode ?? '');
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingSteps(false);
+        }
+      }
+    }
+
+    void hydrateProjectSteps();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [projectId]);
 
   const applyLayoutToDom = (nextLayout: WorkspaceLayout) => {
     if (desktopRootRef.current) {
@@ -379,16 +433,22 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
     }
   };
 
-  const handleCheckCode = () => {
+  const handleCheckCode = async () => {
     if (!currentStep) {
       return;
     }
 
-    const results = runTests(code, currentStep.testCases);
-    const allPassed = results.every(result => result.passed) && results.length === currentStep.testCases.length;
+    setIsCheckingCode(true);
 
-    setTestResults(results);
-    setIsPassed(allPassed);
+    try {
+      const results = await runTests(code, currentStep);
+      const allPassed = results.every(result => result.passed) && results.length === currentStep.testCases.length;
+
+      setTestResults(results);
+      setIsPassed(allPassed);
+    } finally {
+      setIsCheckingCode(false);
+    }
   };
 
   const handleNextChallenge = () => {
@@ -415,6 +475,20 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
     );
   }
 
+  if (isLoadingSteps) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center bg-[#050505] px-6 text-center text-white">
+        <div className="mb-3 text-xl text-zinc-200">جاري تحميل المشروع...</div>
+        <p className="mb-5 text-sm text-zinc-500">
+          نحضر الخطوات البرمجية للمشروع <span className="font-mono text-zinc-300">{projectId}</span>.
+        </p>
+        <button onClick={onBack} className="rounded-lg bg-zinc-800 px-4 py-2 transition hover:bg-zinc-700">
+          العودة
+        </button>
+      </div>
+    );
+  }
+
   if (!stepList || !currentStep) {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-[#050505] px-6 text-center text-white">
@@ -429,51 +503,99 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
     );
   }
 
+  const instructionCopy = instructionLanguage === 'ar'
+    ? {
+        learningPath: 'مسار التعلم',
+        stepInstructions: 'تعليمات الخطوة',
+        inThisStep: 'في هذه الخطوة',
+        required: 'المطلوب',
+        reward: 'المكافأة عند الإتمام',
+        example: 'مثال جاهز',
+        exampleHint: 'هذا شكل تقريبي لما يجب أن تصل إليه بعد هذه الخطوة',
+        checkCode: 'فحص الكود',
+        checking: 'جاري التحقق...',
+        nextStep: 'الخطوة التالية',
+        completeProject: 'اكتمل المشروع! العودة'
+      }
+    : {
+        learningPath: 'Learning Path',
+        stepInstructions: 'Step Instructions',
+        inThisStep: 'In This Step',
+        required: 'Required',
+        reward: 'Reward On Completion',
+        example: 'Example Output',
+        exampleHint: 'A rough example of what you should reach after this step',
+        checkCode: 'Check Code',
+        checking: 'Checking...',
+        nextStep: 'Next Step',
+        completeProject: 'Project Complete! Back'
+      };
+
+  const localizedTitle = instructionLanguage === 'ar' ? currentStep.titleAr ?? currentStep.title : currentStep.title;
+  const localizedDescription =
+    instructionLanguage === 'ar' ? currentStep.descriptionAr ?? currentStep.description : currentStep.description;
+  const localizedInstructions =
+    instructionLanguage === 'ar' ? currentStep.instructionsAr ?? currentStep.instructions : currentStep.instructions;
+  const stepReward = Math.max(
+    20,
+    Math.round((currentProject?.xpReward ?? stepList.length * 24) / Math.max(stepList.length, 1))
+  );
+
   const instructionPaneContent = (
     <>
-      <div className="flex h-12 items-center gap-3 border-b border-[#262626] bg-[#111111] px-4">
-        <button onClick={onBack} className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white">
-          <ArrowRight className="h-4 w-4" />
-        </button>
-        <span className="text-xs font-bold text-zinc-300">مسار التعلم</span>
+      <div className="border-b border-[#262626] bg-[#111111]">
+        <div className="flex h-12 items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white">
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <span className="text-xs font-bold text-zinc-300">{instructionCopy.learningPath}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 px-6">
+          <button className="border-b-2 border-blue-500 pb-3 pt-1 text-sm font-bold text-blue-400">
+            {instructionCopy.stepInstructions}
+          </button>
+        </div>
       </div>
 
-      <div className="scrollbar-hide flex-1 space-y-6 overflow-y-auto p-6">
-        <header>
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-blue-500">
-            الخطوة {currentStepIndex + 1} من {stepList.length}
-          </p>
-          <h1 className="text-2xl font-black leading-tight text-white">{currentStep.title}</h1>
+      <div className="scrollbar-hide flex-1 overflow-y-auto p-6">
+        <header className="rounded-[28px] border border-white/6 bg-[#0c0c0c] p-6 shadow-[0_20px_48px_rgba(0,0,0,0.35)]" dir={direction}>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-300">
+              {currentStep.editorLanguage?.toUpperCase() ?? 'HTML'}
+            </span>
+            <span className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-bold text-blue-400">
+              {instructionLanguage === 'ar'
+                ? `الخطوة ${currentStepIndex + 1} من ${stepList.length}`
+                : `Step ${currentStepIndex + 1} of ${stepList.length}`}
+            </span>
+          </div>
+
+          <h1 className="mb-4 text-3xl font-black leading-tight text-white">{localizedTitle}</h1>
+          <div className="space-y-3" style={isArabic ? rtlTextStyle : undefined}>
+            {renderTextBlocks(
+              localizedDescription,
+              cn('whitespace-pre-line text-[15px] leading-8 text-zinc-300', isArabic ? 'text-right' : 'text-left')
+            )}
+          </div>
         </header>
 
-        <section className="space-y-4">
-          <div className="rounded-2xl border border-white/6 bg-white/[0.03] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.24)]">
-            <strong className="mb-3 block text-sm font-bold text-white">شرح الفكرة</strong>
-            <div className="space-y-3">
-              {renderTextBlocks(currentStep.description, 'whitespace-pre-line text-[15px] leading-7 text-zinc-300')}
-            </div>
+        <section className="mt-5 rounded-[24px] border border-white/6 bg-[#111111] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.26)]" dir={direction}>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <strong className="text-sm font-bold text-white">{instructionCopy.inThisStep}</strong>
           </div>
-
-          <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-blue-500/10 p-5 shadow-[0_18px_40px_rgba(18,72,155,0.18)]">
-            <strong className="mb-2 block text-sm font-bold text-blue-400">التعليمات</strong>
-            <div className="space-y-3">
-              {renderTextBlocks(currentStep.instructions, 'whitespace-pre-line text-sm leading-7 text-blue-50')}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-5 shadow-[0_18px_40px_rgba(120,88,19,0.15)]">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <strong className="text-sm font-bold text-amber-300">مثال جاهز</strong>
-              <span className="text-[11px] font-bold text-amber-100/80">هكذا قد تبدو النتيجة بعد هذه الخطوة</span>
-            </div>
-            <pre className="overflow-x-auto rounded-xl border border-white/8 bg-[#050505] p-4 text-left text-[12px] leading-6 text-amber-100" dir="ltr">
-              <code>{currentStep.expectedOutput}</code>
-            </pre>
+          <div className="space-y-3" style={isArabic ? rtlTextStyle : undefined}>
+            {renderTextBlocks(
+              localizedInstructions,
+              cn('whitespace-pre-line text-sm leading-7 text-zinc-300', isArabic ? 'text-right' : 'text-left')
+            )}
           </div>
         </section>
 
-        <section className="mt-8">
-          <h3 className="mb-4 text-[15px] font-bold text-white">الاختبارات المطلوبة</h3>
+        <section className="mt-5 rounded-[24px] border border-white/6 bg-[#121212] p-5 shadow-[0_18px_40px_rgba(0,0,0,0.26)]" dir={direction}>
+          <strong className="mb-4 block text-sm font-bold text-white">{instructionCopy.required}</strong>
           <ul className="space-y-3">
             {currentStep.testCases.map(testCase => {
               const result = testResults.find(item => item.id === testCase.id);
@@ -490,26 +612,59 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
                 }
               }
 
+              const localizedTestDescription =
+                instructionLanguage === 'ar' ? testCase.descriptionAr ?? testCase.description : testCase.description;
+
               return (
-                <li key={testCase.id} className="flex items-start gap-3 rounded-lg border border-white/[0.05] bg-white/[0.02] p-3.5 shadow-sm transition-colors">
+                <li
+                  key={testCase.id}
+                  className="flex items-start gap-3 rounded-2xl border border-white/[0.05] bg-black/30 px-4 py-3.5"
+                >
                   <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} />
-                  <span className={`text-[13px] leading-relaxed ${result?.passed ? 'text-zinc-300' : 'text-zinc-500'}`}>
-                    {testCase.description}
+                  <span
+                    className={cn(
+                      'text-[13px] leading-relaxed',
+                      result?.passed ? 'text-zinc-300' : 'text-zinc-400',
+                      isArabic ? 'text-right' : 'text-left'
+                    )}
+                    style={isArabic ? rtlTextStyle : undefined}
+                  >
+                    {localizedTestDescription}
                   </span>
                 </li>
               );
             })}
           </ul>
         </section>
+
+        <section className="mt-5 rounded-[20px] border border-amber-500/30 bg-amber-500/[0.08] px-5 py-4 shadow-[0_18px_40px_rgba(120,88,19,0.14)]">
+          <div className="text-right">
+            <p className="text-sm font-bold text-amber-300">{instructionCopy.reward}</p>
+            <p className="mt-1 text-3xl font-black text-amber-200">XP {stepReward}+</p>
+          </div>
+        </section>
+
+        {currentStep.expectedOutput && (
+          <section className="mt-5 rounded-[24px] border border-blue-500/20 bg-blue-500/[0.06] p-5 shadow-[0_18px_40px_rgba(18,72,155,0.18)]">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <strong className="text-sm font-bold text-blue-300">{instructionCopy.example}</strong>
+              <span className="text-[11px] text-blue-100/80">{instructionCopy.exampleHint}</span>
+            </div>
+            <pre className="overflow-x-auto rounded-2xl border border-white/8 bg-[#050505] p-4 text-left text-[12px] leading-6 text-blue-50" dir="ltr">
+              <code>{currentStep.expectedOutput}</code>
+            </pre>
+          </section>
+        )}
       </div>
 
       <div className="flex items-center justify-between border-t border-[#262626] bg-[#111111] p-4 transition-all">
         <button
           onClick={handleCheckCode}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_15px_rgba(37,99,235,0.2)] transition-all hover:bg-blue-500"
+          disabled={isCheckingCode}
+          className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-[0_0_15px_rgba(37,99,235,0.2)] transition-all hover:bg-blue-500 disabled:cursor-wait disabled:opacity-70"
         >
           <Play className="ml-1 h-4 w-4 fill-current" />
-          تحقق من الكود
+          {isCheckingCode ? instructionCopy.checking : instructionCopy.checkCode}
         </button>
 
         {isPassed && currentStepIndex < stepList.length - 1 && (
@@ -517,7 +672,7 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
             onClick={handleNextChallenge}
             className="animate-in zoom-in fade-in flex items-center gap-2 rounded-xl bg-green-500 px-5 py-2.5 text-sm font-bold text-black shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all duration-300 hover:bg-green-400"
           >
-            الخطوة التالية
+            {instructionCopy.nextStep}
             <ArrowLeft className="mr-1 h-4 w-4" />
           </button>
         )}
@@ -533,7 +688,7 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
             }}
             className="animate-in zoom-in fade-in flex items-center gap-2 rounded-xl bg-purple-500 px-5 py-2.5 text-sm font-bold text-black shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all duration-300 hover:bg-purple-400"
           >
-            اكتمل المشروع! العودة
+            {instructionCopy.completeProject}
           </button>
         )}
       </div>
@@ -543,12 +698,13 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
   const editorPaneContent = (
     <>
       <div className="flex h-12 items-center justify-between border-b border-[#262626] bg-[#111111] px-5 py-3">
-        <span className="text-xs font-mono text-zinc-400">index.html</span>
+        <span className="text-xs font-mono text-zinc-400">{currentStep.editorFileName ?? 'index.html'}</span>
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
         <Editor
           height="100%"
-          defaultLanguage="html"
+          defaultLanguage={currentStep.editorLanguage ?? 'html'}
+          language={currentStep.editorLanguage ?? 'html'}
           theme="vs-dark"
           value={code}
           onChange={handleEditorChange}
@@ -577,7 +733,7 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
       <div className="relative min-h-0 flex-1 bg-white">
         <iframe
           title="live-preview"
-          srcDoc={code}
+          srcDoc={buildPreviewDocument(currentStep, code)}
           sandbox="allow-scripts"
           className={cn('absolute inset-0 h-full w-full border-0 bg-white', dragAxis && 'pointer-events-none')}
         />

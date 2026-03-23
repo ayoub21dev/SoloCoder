@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "import:freecodecamp": "node scripts/import-freecodecamp.mjs",
+    "convert:freecodecamp": "node scripts/convert-freecodecamp-to-solocoder.mjs",
+    "sync:freecodecamp": "node scripts/sync-freecodecamp-solocoder.mjs",
+    "sync:freecodecamp:html": "node scripts/sync-freecodecamp-solocoder.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

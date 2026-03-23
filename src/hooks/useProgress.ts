@@ -1,29 +1,98 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import { allProjects, Category, Project } from '@/lib/projects-data';
 
-export function useProgress() {
-  const [completedProjectIds, setCompletedProjectIds] = useState<string[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+const STORAGE_KEY = 'solocoder_progress';
+const PROGRESS_EVENT = 'solocoder-progress-change';
+const EMPTY_PROGRESS: string[] = [];
 
-  useEffect(() => {
-    const saved = localStorage.getItem('solocoder_progress');
-    if (saved) {
-      try {
-        setCompletedProjectIds(JSON.parse(saved));
-      } catch (e) {
-        console.error("Error parsing progress from local storage", e);
-      }
+let cachedProgressRaw: string | null | undefined;
+let cachedProgressSnapshot: string[] = EMPTY_PROGRESS;
+
+function parseStoredProgress(saved: string | null): string[] {
+  if (!saved) {
+    return EMPTY_PROGRESS;
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+
+    if (!Array.isArray(parsed)) {
+      return EMPTY_PROGRESS;
     }
-    setIsLoaded(true);
-  }, []);
+
+    return parsed;
+  } catch (error) {
+    console.error('Error parsing progress from local storage', error);
+    return EMPTY_PROGRESS;
+  }
+}
+
+function readStoredProgress(): string[] {
+  if (typeof window === 'undefined') {
+    return EMPTY_PROGRESS;
+  }
+
+  const saved = window.localStorage.getItem(STORAGE_KEY);
+
+  if (saved === cachedProgressRaw) {
+    return cachedProgressSnapshot;
+  }
+
+  cachedProgressRaw = saved;
+  cachedProgressSnapshot = parseStoredProgress(saved);
+  return cachedProgressSnapshot;
+}
+
+function getServerProgressSnapshot() {
+  return EMPTY_PROGRESS;
+}
+
+function subscribeToProgress(onStoreChange: () => void) {
+  if (typeof window === 'undefined') {
+    return () => undefined;
+  }
+
+  const handleChange = () => onStoreChange();
+
+  window.addEventListener(PROGRESS_EVENT, handleChange);
+  window.addEventListener('storage', handleChange);
+
+  return () => {
+    window.removeEventListener(PROGRESS_EVENT, handleChange);
+    window.removeEventListener('storage', handleChange);
+  };
+}
+
+function notifyProgressChanged() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.dispatchEvent(new Event(PROGRESS_EVENT));
+}
+
+export function useProgress() {
+  const completedProjectIds = useSyncExternalStore(
+    subscribeToProgress,
+    readStoredProgress,
+    getServerProgressSnapshot
+  );
+  const isLoaded = true;
 
   const markCompleted = (projectId: string) => {
-    setCompletedProjectIds(prev => {
-      if (prev.includes(projectId)) return prev;
-      const next = [...prev, projectId];
-      localStorage.setItem('solocoder_progress', JSON.stringify(next));
-      return next;
-    });
+    const current = readStoredProgress();
+
+    if (current.includes(projectId)) {
+      return;
+    }
+
+    const next = [...current, projectId];
+    const serialized = JSON.stringify(next);
+
+    window.localStorage.setItem(STORAGE_KEY, serialized);
+    cachedProgressRaw = serialized;
+    cachedProgressSnapshot = next;
+    notifyProgressChanged();
   };
 
   const isCompleted = (projectId: string) => completedProjectIds.includes(projectId);

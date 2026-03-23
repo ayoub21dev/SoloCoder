@@ -18,8 +18,8 @@ const MentorDashboard = () => {
   const students = Array.from({ length: 30 }, (_, i) => ({
     id: i + 1,
     name: `طالب ${i + 1}`,
-    step: Math.floor(Math.random() * 12) + 1,
-    attempts: Math.floor(Math.random() * 5),
+    step: (i * 3) % 12 + 1,
+    attempts: i % 5,
     status: i % 10 === 0 ? 'stuck' : i % 5 === 0 ? 'idle' : 'active',
     lastActive: i % 10 === 0 ? '20 دقيقة' : 'الآن'
   }));

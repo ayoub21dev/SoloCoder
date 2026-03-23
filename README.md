@@ -94,3 +94,18 @@ src/
 4. Subscribe dashboards to live channels and patch UI state in place.
 5. Add analytics aggregations and fallback polling for resilience.
 
+## Importing freeCodeCamp Curriculum
+
+There is now a local importer script for pulling freeCodeCamp curriculum metadata, and optionally challenge markdown content, into a JSON snapshot for SoloCoder:
+
+```bash
+npm run import:freecodecamp --
+npm run import:freecodecamp -- --include-content
+npm run import:freecodecamp -- --superblocks=basic-html,basic-css,javascript-v9 --include-content
+```
+
+Notes:
+- output defaults to `data/imports/freecodecamp/html-css-js.json`
+- imported datasets are gitignored by default
+- the script reads freeCodeCamp's official repo structure directly
+- freeCodeCamp's README states `/curriculum` learning resources are copyrighted, so review their licensing before redistributing imported content inside your product
