@@ -127,7 +127,7 @@ function ProjectCard({ project, onClick }: { project: Project, onClick: () => vo
       className={cn(
         "group relative flex items-stretch gap-0 rounded-2xl border bg-[#050505] transition-all duration-200 min-h-[100px]",
         isLocked
-          ? "border-white/5 opacity-40 cursor-not-allowed"
+          ? "border-white/5 cursor-not-allowed"
           : "border-white/[0.08] hover:border-white/[0.15] hover:bg-[#080808] cursor-pointer shadow-xl"
       )}
     >
@@ -248,8 +248,8 @@ export default function LearningPath({ onProjectSelect }: LearningPathProps) {
     <div className="pb-24 pt-10" dir={direction}>
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-black text-white tracking-tight mb-3" dir={direction} style={isArabic ? rtlTextStyle : undefined}>{uiText.title}</h1>
-        <p className="text-zinc-500 text-lg" dir={direction} style={isArabic ? rtlTextStyle : undefined}>{uiText.subtitle}</p>
+        <h1 className="text-5xl font-black text-white tracking-tight mb-3">{uiText.title}</h1>
+        <p className="text-zinc-500 text-lg">{uiText.subtitle}</p>
       </div>
 
       {/* Roadmap circles */}

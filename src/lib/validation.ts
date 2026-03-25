@@ -518,7 +518,7 @@ function createHiddenFrame(srcDoc: string) {
   return new Promise<HTMLIFrameElement>((resolve, reject) => {
     const iframe = document.createElement('iframe');
 
-    iframe.setAttribute('sandbox', 'allow-scripts');
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
     iframe.style.position = 'fixed';
     iframe.style.left = '-9999px';
     iframe.style.top = '-9999px';

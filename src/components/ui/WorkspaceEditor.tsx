@@ -507,7 +507,7 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
     ? {
         learningPath: 'مسار التعلم',
         stepInstructions: 'تعليمات الخطوة',
-        inThisStep: 'في هذه الخطوة',
+        inThisStep: 'التعليمات',
         required: 'المطلوب',
         reward: 'المكافأة عند الإتمام',
         example: 'مثال جاهز',
@@ -520,7 +520,7 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
     : {
         learningPath: 'Learning Path',
         stepInstructions: 'Step Instructions',
-        inThisStep: 'In This Step',
+        inThisStep: 'Instructions',
         required: 'Required',
         reward: 'Reward On Completion',
         example: 'Example Output',
@@ -637,13 +637,6 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
           </ul>
         </section>
 
-        <section className="mt-5 rounded-[20px] border border-amber-500/30 bg-amber-500/[0.08] px-5 py-4 shadow-[0_18px_40px_rgba(120,88,19,0.14)]">
-          <div className="text-right">
-            <p className="text-sm font-bold text-amber-300">{instructionCopy.reward}</p>
-            <p className="mt-1 text-3xl font-black text-amber-200">XP {stepReward}+</p>
-          </div>
-        </section>
-
         {currentStep.expectedOutput && (
           <section className="mt-5 rounded-[24px] border border-blue-500/20 bg-blue-500/[0.06] p-5 shadow-[0_18px_40px_rgba(18,72,155,0.18)]">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -712,7 +705,6 @@ export default function WorkspaceEditor({ projectId, onBack }: WorkspaceEditorPr
             automaticLayout: true,
             minimap: { enabled: false },
             fontSize: 14,
-            fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
             wordWrap: 'on',
             padding: { top: 24, bottom: 24 },
             scrollBeyondLastLine: false,
